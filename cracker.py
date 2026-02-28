@@ -3,6 +3,7 @@ import sys
 import time
 import argparse
 import logging
+import re
 
 def crack_router(router_url, username, password_file,
                  timeout: float = 10.0,
@@ -124,6 +125,8 @@ if __name__ == "__main__":
     parser.add_argument("--failed-log", default="failed_attempts.txt", help="Path to write failed attempts (default: failed_attempts.txt)")
     parser.add_argument("--success-header", action='append', default=[],
                         help="Header match in form 'Header-Name:substring'. Can be repeated. If provided, header substring must be present to count as body/header match.")
+    parser.add_argument("--success-status-codes", default="200",
+                        help="Comma- or space-separated list of HTTP status codes to treat as immediate success (default: 200). Example: --success-status-codes 200,302")
     parser.add_argument("--verbose", action="store_true", help="Enable debug logging")
 
     args = parser.parse_args()
@@ -150,7 +153,18 @@ if __name__ == "__main__":
         else:
             logging.warning("Ignoring malformed --success-header entry: %s", item)
 
-    success_status_codes = [200]
+    # Parse status codes (comma or space separated)
+    codes_raw = re.split(r'[,\s]+', args.success_status_codes.strip()) if args.success_status_codes else []
+    success_status_codes = []
+    for c in codes_raw:
+        if c:
+            try:
+                success_status_codes.append(int(c))
+            except ValueError:
+                logging.warning('Ignoring invalid status code: %s', c)
+
+    if not success_status_codes:
+        success_status_codes = [200]
 
     found = crack_router(args.router_url, args.username, args.password_file,
                          timeout=timeout,
