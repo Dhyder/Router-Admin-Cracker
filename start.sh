@@ -1,4 +1,13 @@
 #!/usr/bin/env bash
+# Ensure we run under bash (some systems invoke scripts with other shells by default).
+if [ -z "$BASH_VERSION" ]; then
+  if command -v bash >/dev/null 2>&1; then
+    exec bash "$0" "$@"
+  else
+    printf "This script requires bash. Please install bash or run on a system with bash.\n" >&2
+    exit 1
+  fi
+fi
 # Interactive launcher for cracker.py
 # Prompts for router URL (attempts auto-detect), username, wordlist and options
 
@@ -62,6 +71,10 @@ fi
 if [ -z "$GW" ] && command -v route >/dev/null 2>&1; then
   GW=$(route -n 2>/dev/null | awk '/UG/ {print $2; exit}')
 fi
+# Extra attempt: ask the kernel what route it would use to reach the public internet
+if [ -z "$GW" ] && command -v ip >/dev/null 2>&1; then
+  GW=$(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="via"){print $(i+1); exit}}')
+fi
 
 if [ -z "$router_url" ] && [ $auto -eq 1 ] && [ -n "$GW" ]; then
   router_url="http://${GW}"
@@ -107,11 +120,11 @@ if [ $nonint -eq 0 ]; then
 fi
 
 if [ -z "$router_url" ]; then
-  echo "Router URL is required in non-interactive mode. Use --router-url or run interactively."; exit 1
+  printf "Router URL is required in non-interactive mode. Use --router-url or run interactively.\n"; exit 1
 fi
 
-echo "\n${GREEN}Ready to politely try passwords against ${router_url} as ${username}.${RESET}"
-echo "Failed attempts will be stored in '${failed_log}' (use --failed-log to change)."
+printf "\n%sReady to politely try passwords against %s as %s.%s\n" "$GREEN" "$router_url" "$username" "$RESET"
+printf "Failed attempts will be stored in '%s' (use --failed-log to change).\n" "$failed_log"
 
 if [ $nonint -eq 0 ]; then
   printf "Start now? [y/N] "
