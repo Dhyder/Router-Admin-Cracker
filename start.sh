@@ -71,31 +71,38 @@ fi
 if [ -z "$router_url" ] && [ $nonint -eq 0 ]; then
   if [ -n "$GW" ]; then
     printf "%sDetected gateway %s — try that?%s\n" "$YELLOW" "$GW" "$RESET"
-    read -r -p "Use http://${GW} as router URL? [Y/n] " usegw
+    printf "Use http://%s as router URL? [Y/n] " "$GW"
+    read -r usegw
     if [ "$usegw" = "" ] || [[ "$usegw" =~ ^([yY][eE]?[sS]?)$ ]]; then
       router_url="http://${GW}"
     else
-      read -r -p "Enter router URL (eg. http://192.168.0.1): " router_url
+      printf "Enter router URL (eg. http://192.168.0.1): "
+      read -r router_url
     fi
   else
-    read -r -p "Couldn't detect gateway — enter router URL (eg. http://192.168.0.1): " router_url
+    printf "Couldn't detect gateway — enter router URL (eg. http://192.168.0.1): "
+    read -r router_url
   fi
 fi
 
 if [ -z "$username" ] && [ $nonint -eq 0 ]; then
-  read -r -p "Username to try [admin]: " username
+  printf "Username to try [admin]: "
+  read -r username
   username=${username:-admin}
 fi
 
 if [ -z "$password_file" ] && [ $nonint -eq 0 ]; then
-  read -r -p "Password file [${default_wordlist}]: " password_file
+  printf "Password file [${default_wordlist}]: "
+  read -r password_file
   password_file=${password_file:-$default_wordlist}
 fi
 
 if [ $nonint -eq 0 ]; then
-  read -r -p "Delay between attempts in seconds [${delay}]: " input_delay
+  printf "Delay between attempts in seconds [${delay}]: "
+  read -r input_delay
   delay=${input_delay:-$delay}
-  read -r -p "Timeout per request in seconds [${timeout}]: " input_timeout
+  printf "Timeout per request in seconds [${timeout}]: "
+  read -r input_timeout
   timeout=${input_timeout:-$timeout}
 fi
 
@@ -107,7 +114,8 @@ echo "\n${GREEN}Ready to politely try passwords against ${router_url} as ${usern
 echo "Failed attempts will be stored in '${failed_log}' (use --failed-log to change)."
 
 if [ $nonint -eq 0 ]; then
-  read -r -p "Start now? [y/N] " startnow
+  printf "Start now? [y/N] "
+  read -r startnow
   if [[ ! "$startnow" =~ ^([yY][eE]?[sS]?)$ ]]; then
     echo "Ok, aborted. Coffee first? ☕"; exit 1
   fi
